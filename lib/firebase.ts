@@ -13,21 +13,7 @@ const firebaseConfig = {
   appId: "1:391278500178:web:cd49331d0c8cf11e0e828b",
   measurementId: "G-X5F5Z27WR8"
 };
-// Parse the Firebase Admin credentials from the environment variable
-let firebaseAdminCredentials;
-try {
-  firebaseAdminCredentials = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS || '');
-} catch (error) {
-  console.error('Error parsing FIREBASE_ADMIN_CREDENTIALS:', error);
-  firebaseAdminCredentials = null;
-}
 
-// Add the parsed credentials to the firebaseConfig
-if (firebaseAdminCredentials) {
-  firebaseConfig.credential = firebaseAdminCredentials;
-} else {
-  console.warn('Firebase Admin credentials not found or invalid');
-}
 
 let firebaseApp: FirebaseApp;
 let firebaseAuth: Auth;
