@@ -97,30 +97,42 @@ export function Page() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push('/'); // Redirect to home page after logout
+      console.log('User signed out');
+      router.push('/login');
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
 
   const handleSubscribe = async () => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
     const stripe = await stripePromise;
     if (!stripe) {
       console.error('Stripe failed to load');
       return;
     }
-    const response = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ userId: user.uid }),
-    });
-    const { sessionId } = await response.json();
-    const result = await stripe.redirectToCheckout({ sessionId });
-    if (result.error) {
-      alert(result.error.message);
+    try {
+      console.log('Fetching checkout session...');
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.uid }),
+      });
+      console.log('Checkout session response:', response);
+      const { sessionId } = await response.json();
+      console.log('Session ID:', sessionId);
+      const result = await stripe.redirectToCheckout({ sessionId });
+      if (result.error) {
+        console.error('Stripe redirect error:', result.error);
+        alert(result.error.message);
+      }
+    } catch (error) {
+      console.error('Error in handleSubscribe:', error);
     }
   };
 
