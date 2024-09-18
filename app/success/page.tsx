@@ -1,57 +1,42 @@
-'use client'
-
-import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { stripe } from '@/lib/stripe';
 
-function SuccessContent() {
-  const searchParams = useSearchParams();
-  const [message, setMessage] = useState('Processing your subscription...');
+async function verifySubscription(sessionId: string) {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-  useEffect(() => {
-    const sessionId = searchParams.get('session_id');
-    if (sessionId) {
-      // Verify the session and update the user's subscription status
-      verifySubscription(sessionId);
-    }
-  }, [searchParams]);
-
-  const verifySubscription = async (sessionId: string) => {
-    try {
-      const response = await fetch('/api/verify-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sessionId }),
+    if (session.payment_status === 'paid') {
+      const userRef = doc(db, 'users', session.client_reference_id as string);
+      await updateDoc(userRef, {
+        isSubscribed: true,
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Update Firestore
-        const userRef = doc(db, 'users', data.userId);
-        await updateDoc(userRef, {
-          isSubscribed: true,
-        });
-        setMessage('Subscription successful! You can now generate images.');
-      } else {
-        setMessage('Failed to verify subscription. Please contact support.');
-      }
-    } catch (error) {
-      console.error('Error verifying subscription:', error);
-      setMessage('An error occurred. Please try again or contact support.');
+      return 'Subscription successful! You can now generate images.';
+    } else {
+      return 'Failed to verify subscription. Please contact support.';
     }
-  };
+  } catch (error) {
+    console.error('Error verifying subscription:', error);
+    return 'An error occurred. Please try again or contact support.';
+  }
+}
 
+async function SuccessContent({ sessionId }: { sessionId: string }) {
+  const message = await verifySubscription(sessionId);
   return <div>{message}</div>;
 }
 
-export default function SuccessPage() {
+export default function SuccessPage({
+  searchParams,
+}: {
+  searchParams: { session_id: string };
+}) {
+  const sessionId = searchParams.session_id;
+
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SuccessContent />
+    <Suspense fallback={<div>Processing your subscription...</div>}>
+      <SuccessContent sessionId={sessionId} />
     </Suspense>
   );
 }
