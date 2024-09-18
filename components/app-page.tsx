@@ -13,9 +13,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
 
-console.log('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Remove this line
+// const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface LoRA {
   path: string;
@@ -30,6 +29,7 @@ export function Page() {
   const [disableSafetyChecker, setDisableSafetyChecker] = useState(false)
   const [user, setUser] = useState<User | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
 
   const router = useRouter()
 
@@ -54,6 +54,17 @@ export function Page() {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Fetch the publishable key from an API route
+    fetch('/api/get-stripe-publishable-key')
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('Stripe Publishable Key:', data.publishableKey);
+        setStripePromise(loadStripe(data.publishableKey));
+      })
+      .catch((err) => console.error('Error loading Stripe Publishable Key:', err));
   }, []);
 
   const handleAddLora = () => {
@@ -111,12 +122,17 @@ export function Page() {
       console.error('No user found');
       return;
     }
+    if (!stripePromise) {
+      console.error('Stripe has not loaded yet');
+      return;
+    }
     const stripe = await stripePromise;
     if (!stripe) {
       console.error('Stripe failed to load');
       return;
     }
     try {
+      console.log('Fetching checkout session...');
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -124,7 +140,9 @@ export function Page() {
         },
         body: JSON.stringify({ userId: user.uid }),
       });
+      console.log('Checkout session response:', response);
       const { sessionId } = await response.json();
+      console.log('Session ID:', sessionId);
       const result = await stripe.redirectToCheckout({ sessionId });
       if (result.error) {
         console.error('Stripe redirect error:', result.error);
