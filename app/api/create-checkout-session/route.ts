@@ -5,29 +5,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
+const PRICE_ID = 'price_XXXXXXXXXX'; // Replace with your actual Price ID for the free subscription
+
 export async function POST(request: Request) {
   const { userId } = await request.json();
   console.log('Received userId:', userId);
 
   try {
-    const product = await stripe.products.create({
-      name: 'Free Test Subscription',
-    });
-    console.log('Created product:', product.id);
-
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: 0, // Set to 0 for free subscription
-      currency: 'usd',
-      recurring: { interval: 'month' },
-    });
-    console.log('Created price:', price.id);
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: price.id,
+          price: PRICE_ID,
           quantity: 1,
         },
       ],
@@ -37,6 +26,7 @@ export async function POST(request: Request) {
       client_reference_id: userId,
     });
     console.log('Created session:', session.id);
+    console.log('Session details:', JSON.stringify(session, null, 2));
 
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {

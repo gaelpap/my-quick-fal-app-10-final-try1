@@ -13,45 +13,39 @@ interface UserImage {
 export function UserImages() {
   const [images, setImages] = useState<UserImage[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log('Auth state changed in UserImages, user:', user?.uid);
-      setUserId(user ? user.uid : null);
-    });
-    return () => unsubscribe();
-  }, []);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchImages = async () => {
-      if (!userId) {
-        console.log('No user ID, not fetching images');
+      const user = auth.currentUser;
+      if (!user) {
         setError('Please log in to view your images.');
+        setLoading(false);
         return;
       }
 
-      console.log('Fetching images for user:', userId);
-      
       try {
-        const q = query(collection(db, 'users', userId, 'images'), orderBy('createdAt', 'desc'));
+        const q = query(collection(db, 'users', user.uid, 'images'), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         const userImages: UserImage[] = [];
         querySnapshot.forEach((doc) => {
           userImages.push({ id: doc.id, ...doc.data() } as UserImage);
         });
         setImages(userImages);
-        console.log('Fetched images:', userImages);
       } catch (error) {
         console.error('Error fetching images:', error);
         setError('Failed to fetch images. Please try again later.');
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (userId) {
-      fetchImages();
-    }
-  }, [userId]);
+    fetchImages();
+  }, []);
+
+  if (loading) {
+    return <div>Loading images...</div>;
+  }
 
   if (error) {
     return <div className="text-red-500">{error}</div>;
@@ -69,8 +63,9 @@ export function UserImages() {
               <Image 
                 src={image.imageUrl} 
                 alt={image.prompt} 
-                width={500}  // Specify width
-                height={500} // Specify height
+                width={500}
+                height={500}
+                layout="responsive"
               />
               <p className="mt-2 text-sm">{image.prompt}</p>
             </div>
