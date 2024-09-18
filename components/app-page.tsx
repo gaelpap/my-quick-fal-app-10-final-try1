@@ -13,6 +13,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
 
+console.log('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface LoRA {
@@ -115,7 +117,6 @@ export function Page() {
       return;
     }
     try {
-      console.log('Fetching checkout session...');
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -123,9 +124,7 @@ export function Page() {
         },
         body: JSON.stringify({ userId: user.uid }),
       });
-      console.log('Checkout session response:', response);
       const { sessionId } = await response.json();
-      console.log('Session ID:', sessionId);
       const result = await stripe.redirectToCheckout({ sessionId });
       if (result.error) {
         console.error('Stripe redirect error:', result.error);
