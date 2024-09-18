@@ -11,6 +11,7 @@ import { UserImages } from './UserImages'
 import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { stripePromise } from '../lib/stripe';
+import Image from 'next/image';
 
 interface LoRA {
   path: string;
@@ -197,7 +198,13 @@ export function Page() {
       {imageUrl && (
         <div>
           <h2 className="text-xl font-bold mb-2">Generated Image:</h2>
-          <img src={imageUrl} alt="Generated" className="max-w-full h-auto mb-2" />
+          <Image 
+            src={imageUrl} 
+            alt="Generated image"
+            width={500}
+            height={500}
+            layout="responsive"
+          />
         </div>
       )}
       <UserImages />
