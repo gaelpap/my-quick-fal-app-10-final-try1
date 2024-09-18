@@ -25,3 +25,7 @@ if (typeof window !== 'undefined') {
 }
 
 export { app, auth, db, analytics };
+
+// Add these helper functions
+export const getFirebaseAuth = () => auth;
+export const getFirebaseDb = () => db;

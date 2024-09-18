@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';  // Import auth and db directly
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 
 interface UserImage {
@@ -15,9 +15,8 @@ export function UserImages() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log('Auth state changed in UserImages, user:', user?.uid); // Add this line
+      console.log('Auth state changed in UserImages, user:', user?.uid);
       setUserId(user ? user.uid : null);
     });
     return () => unsubscribe();
@@ -26,13 +25,12 @@ export function UserImages() {
   useEffect(() => {
     const fetchImages = async () => {
       if (!userId) {
-        console.log('No user ID, not fetching images'); // Add this line
+        console.log('No user ID, not fetching images');
         setError('Please log in to view your images.');
         return;
       }
 
-      console.log('Fetching images for user:', userId); // Add this line
-      const db = getFirebaseDb();
+      console.log('Fetching images for user:', userId);
       
       try {
         const q = query(collection(db, 'users', userId, 'images'), orderBy('createdAt', 'desc'));

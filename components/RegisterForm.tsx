@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';  // Import auth and db directly
 
 export default function RegisterForm() {
   const [email, setEmail] = useState('');
@@ -15,8 +15,6 @@ export default function RegisterForm() {
     setSuccess(false);
 
     try {
-      const auth = getFirebaseAuth();
-      const db = getFirebaseDb();
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
@@ -24,6 +22,7 @@ export default function RegisterForm() {
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         createdAt: new Date().toISOString(),
+        isSubscribed: false, // Add this line
       });
 
       setSuccess(true);

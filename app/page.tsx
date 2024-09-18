@@ -2,47 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase';
+import { auth } from '../lib/firebase';  // Import auth directly
 import { Page } from '@/components/app-page';
-import LoginForm from '@/components/LoginForm';
-import RegisterForm from '@/components/RegisterForm';
+import LoginForm from '../components/LoginForm';
+import RegisterForm from '../components/RegisterForm';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log('Auth state changed in Home, user:', user?.uid); // Add this line
+      console.log('Auth state changed in Home, user:', user?.uid);
       setUser(user);
       setAuthChecked(true);
+      if (!user) {
+        router.push('/login'); // Redirect to login page if not authenticated
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   if (!authChecked) {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Welcome to Image Generator</h1>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">Login</h2>
-            <LoginForm />
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">Register</h2>
-            <RegisterForm />
-          </div>
-        </div>
-      </div>
-    );
+  if (user) {
+    return <Page />;
   }
 
-  return <Page />;
+  return (
+    <div>
+      <h1>Welcome to My App</h1>
+      <LoginForm />
+      <RegisterForm />
+    </div>
+  );
 }

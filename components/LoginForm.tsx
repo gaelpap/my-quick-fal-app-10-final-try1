@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';  // Import auth directly
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -9,7 +9,6 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const auth = getFirebaseAuth();
       await signInWithEmailAndPassword(auth, email, password);
       // Handle successful login
     } catch (error) {
