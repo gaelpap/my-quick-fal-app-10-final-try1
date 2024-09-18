@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { stripe } from '@/lib/stripe';
 
 async function verifySubscription(sessionId: string) {
@@ -16,13 +16,25 @@ async function verifySubscription(sessionId: string) {
         console.error('No client_reference_id found in session');
         return 'Error: No user reference found';
       }
+      
+      // Ensure the user is authenticated
+      const currentUser = auth.currentUser;
+      console.log('Current user:', currentUser ? currentUser.uid : 'No user');
+      if (!currentUser || currentUser.uid !== session.client_reference_id) {
+        console.error('User not authenticated or mismatch');
+        return 'Error: Authentication required';
+      }
+
       const userRef = doc(db, 'users', session.client_reference_id);
       console.log('Updating user document for:', session.client_reference_id);
-      await updateDoc(userRef, {
-        isSubscribed: true,
-      });
-      console.log('Updated user document');
-      return 'Subscription successful! You can now generate images.';
+      try {
+        await setDoc(userRef, { isSubscribed: true }, { merge: true });
+        console.log('Updated user document');
+        return 'Subscription successful! You can now generate images.';
+      } catch (updateError) {
+        console.error('Error updating user document:', updateError);
+        return `Error updating user document: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`;
+      }
     } else {
       console.log('Payment status is not paid:', session.payment_status);
       return 'Failed to verify subscription. Please contact support.';
