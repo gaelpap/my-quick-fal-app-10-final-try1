@@ -11,13 +11,13 @@ export async function POST(request: Request) {
 
   try {
     const product = await stripe.products.create({
-      name: 'Monthly Subscription',
+      name: 'Free Test Subscription',
     });
     console.log('Created product:', product.id);
 
     const price = await stripe.prices.create({
       product: product.id,
-      unit_amount: 1000,
+      unit_amount: 0, // Set to 0 for free subscription
       currency: 'usd',
       recurring: { interval: 'month' },
     });
