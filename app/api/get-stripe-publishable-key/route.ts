@@ -9,5 +9,10 @@ export async function GET() {
     return NextResponse.json({ error: 'Stripe Publishable Key is not set' }, { status: 500 });
   }
   
+  if (!publishableKey.startsWith('pk_test_')) {
+    console.error('Invalid Stripe Publishable Key format');
+    return NextResponse.json({ error: 'Invalid Stripe Publishable Key format' }, { status: 500 });
+  }
+  
   return NextResponse.json({ publishableKey });
 }

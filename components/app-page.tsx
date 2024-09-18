@@ -57,22 +57,27 @@ export function Page() {
   }, []);
 
   useEffect(() => {
-    // Fetch the publishable key from an API route
-    fetch('/api/get-stripe-publishable-key')
-      .then((res) => res.json())
-      .then((data) => {
+    async function loadStripeKey() {
+      try {
+        const response = await fetch('/api/get-stripe-publishable-key');
+        const data = await response.json();
         if (data.error) {
           console.error('Error fetching Stripe Publishable Key:', data.error);
           return;
         }
-        console.log('Stripe Publishable Key:', data.publishableKey);
+        console.log('Received Stripe Publishable Key:', data.publishableKey);
         if (!data.publishableKey) {
           console.error('Received empty Stripe Publishable Key');
           return;
         }
-        setStripePromise(loadStripe(data.publishableKey));
-      })
-      .catch((err) => console.error('Error loading Stripe Publishable Key:', err));
+        const stripePromise = loadStripe(data.publishableKey);
+        setStripePromise(stripePromise);
+      } catch (error) {
+        console.error('Error loading Stripe Publishable Key:', error);
+      }
+    }
+
+    loadStripeKey();
   }, []);
 
   const handleAddLora = () => {
