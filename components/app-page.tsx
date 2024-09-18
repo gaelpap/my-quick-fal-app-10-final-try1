@@ -61,7 +61,15 @@ export function Page() {
     fetch('/api/get-stripe-publishable-key')
       .then((res) => res.json())
       .then((data) => {
+        if (data.error) {
+          console.error('Error fetching Stripe Publishable Key:', data.error);
+          return;
+        }
         console.log('Stripe Publishable Key:', data.publishableKey);
+        if (!data.publishableKey) {
+          console.error('Received empty Stripe Publishable Key');
+          return;
+        }
         setStripePromise(loadStripe(data.publishableKey));
       })
       .catch((err) => console.error('Error loading Stripe Publishable Key:', err));
@@ -126,12 +134,12 @@ export function Page() {
       console.error('Stripe has not loaded yet');
       return;
     }
-    const stripe = await stripePromise;
-    if (!stripe) {
-      console.error('Stripe failed to load');
-      return;
-    }
     try {
+      const stripe = await stripePromise;
+      if (!stripe) {
+        console.error('Stripe failed to load');
+        return;
+      }
       console.log('Fetching checkout session...');
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -140,6 +148,11 @@ export function Page() {
         },
         body: JSON.stringify({ userId: user.uid }),
       });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response from create-checkout-session:', errorData);
+        throw new Error('Failed to create checkout session');
+      }
       console.log('Checkout session response:', response);
       const { sessionId } = await response.json();
       console.log('Session ID:', sessionId);
