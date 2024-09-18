@@ -1,94 +1,57 @@
 'use client'
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
-export default function SuccessPage() {
-  const router = useRouter();
+function SuccessContent() {
   const searchParams = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(true);
+  const [message, setMessage] = useState('Processing your subscription...');
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
     if (sessionId) {
-      const updateSubscription = async () => {
-        try {
-          await new Promise<void>((resolve) => {
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
-              unsubscribe();
-              if (user) {
-                console.log('User authenticated:', user.uid);
-                resolve();
-              } else {
-                console.log('No user found');
-                setError('User not found. Please try logging in again.');
-                resolve();
-              }
-            });
-          });
-
-          const user = auth.currentUser;
-          if (user) {
-            console.log('Updating subscription for user:', user.uid);
-            const userDocRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
-
-            if (!userDoc.exists()) {
-              // Create the user document if it doesn't exist
-              await setDoc(userDocRef, {
-                email: user.email,
-                createdAt: new Date().toISOString(),
-                isSubscribed: true,
-                stripeSessionId: sessionId,
-              });
-              console.log('User document created and subscription updated');
-            } else {
-              // Update the existing user document
-              await updateDoc(userDocRef, {
-                isSubscribed: true,
-                stripeSessionId: sessionId,
-              });
-              console.log('Subscription updated successfully');
-            }
-
-            setTimeout(() => {
-              router.push('/');
-            }, 3000); // Redirect after 3 seconds
-          } else {
-            console.log('No user found after authentication check');
-            setError('User not found after authentication check. Please try logging in again.');
-          }
-        } catch (error) {
-          console.error('Error updating subscription:', error);
-          setError(`Failed to update subscription: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-          setIsUpdating(false);
-        }
-      };
-      updateSubscription();
-    } else {
-      setError('Invalid session. Please try subscribing again.');
-      setIsUpdating(false);
+      // Verify the session and update the user's subscription status
+      verifySubscription(sessionId);
     }
-  }, [router, searchParams]);
+  }, [searchParams]);
 
+  const verifySubscription = async (sessionId: string) => {
+    try {
+      const response = await fetch('/api/verify-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update Firestore
+        const userRef = doc(db, 'users', data.userId);
+        await updateDoc(userRef, {
+          isSubscribed: true,
+        });
+        setMessage('Subscription successful! You can now generate images.');
+      } else {
+        setMessage('Failed to verify subscription. Please contact support.');
+      }
+    } catch (error) {
+      console.error('Error verifying subscription:', error);
+      setMessage('An error occurred. Please try again or contact support.');
+    }
+  };
+
+  return <div>{message}</div>;
+}
+
+export default function SuccessPage() {
   return (
-    <div className="text-center py-8">
-      <h1 className="text-2xl font-bold mb-4">Thank you for subscribing!</h1>
-      {isUpdating ? (
-        <p>Updating your subscription...</p>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : (
-        <>
-          <p>You can now start generating images.</p>
-          <p>Redirecting you to the home page in 3 seconds...</p>
-        </>
-      )}
-    </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }
