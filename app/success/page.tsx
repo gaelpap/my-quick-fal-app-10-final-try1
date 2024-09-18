@@ -22,21 +22,18 @@ async function verifySubscription(sessionId: string) {
   }
 }
 
-async function SuccessContent({ sessionId }: { sessionId: string }) {
-  const message = await verifySubscription(sessionId);
-  return <div>{message}</div>;
-}
-
-export default function SuccessPage({
+export default async function SuccessPage({
   searchParams,
 }: {
   searchParams: { session_id: string };
 }) {
   const sessionId = searchParams.session_id;
+  const message = await verifySubscription(sessionId);
 
   return (
-    <Suspense fallback={<div>Processing your subscription...</div>}>
-      <SuccessContent sessionId={sessionId} />
-    </Suspense>
+    <div>
+      <h1>Subscription Status</h1>
+      <p>{message}</p>
+    </div>
   );
 }
