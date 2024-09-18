@@ -2,22 +2,20 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20', // Update this to the latest API version
+  apiVersion: '2024-06-20',
 });
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
 
   try {
-    // Create a free product if it doesn't exist
     const product = await stripe.products.create({
       name: 'Monthly Subscription',
     });
 
-    // Create a free price for the product
     const price = await stripe.prices.create({
       product: product.id,
-      unit_amount: 1000, // $10.00
+      unit_amount: 1000,
       currency: 'usd',
       recurring: { interval: 'month' },
     });

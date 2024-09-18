@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';  // Import auth and db directly
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import Image from 'next/image';
 
 interface UserImage {
   id: string;
@@ -65,7 +66,12 @@ export function UserImages() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {images.map((image) => (
             <div key={image.id} className="border rounded p-2">
-              <img src={image.imageUrl} alt={image.prompt} className="w-full h-auto" />
+              <Image 
+                src={image.imageUrl} 
+                alt={image.prompt} 
+                width={500}  // Specify width
+                height={500} // Specify height
+              />
               <p className="mt-2 text-sm">{image.prompt}</p>
             </div>
           ))}
