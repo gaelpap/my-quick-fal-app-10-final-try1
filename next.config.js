@@ -3,13 +3,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    appDir: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
-  swcMinify: false,
+  swcMinify: true,
 }
 
 module.exports = nextConfig

@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 import { UserImages } from './UserImages'
 import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { stripePromise } from '../lib/stripe';
+import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
 
 interface LoRA {
@@ -104,6 +104,10 @@ export function Page() {
   const handleSubscribe = async () => {
     if (!user) return;
     const stripe = await stripePromise;
+    if (!stripe) {
+      console.error('Stripe failed to load');
+      return;
+    }
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: {
@@ -112,8 +116,8 @@ export function Page() {
       body: JSON.stringify({ userId: user.uid }),
     });
     const { sessionId } = await response.json();
-    const result = await stripe?.redirectToCheckout({ sessionId });
-    if (result?.error) {
+    const result = await stripe.redirectToCheckout({ sessionId });
+    if (result.error) {
       alert(result.error.message);
     }
   };
