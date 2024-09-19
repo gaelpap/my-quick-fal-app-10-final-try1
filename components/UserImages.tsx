@@ -66,6 +66,10 @@ export function UserImages() {
                 width={500}
                 height={500}
                 layout="responsive"
+                onError={(e) => {
+                  console.error(`Error loading image: ${image.imageUrl}`);
+                  e.currentTarget.src = '/placeholder-image.jpg'; // Replace with a placeholder image
+                }}
               />
               <p className="mt-2 text-sm">{image.prompt}</p>
             </div>

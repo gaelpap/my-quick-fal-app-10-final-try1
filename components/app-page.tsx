@@ -103,6 +103,7 @@ export function Page() {
       return;
     }
     setIsLoading(true);
+    setImageUrl(''); // Clear previous image
     try {
       const idToken = await user.getIdToken();
       const result = await generateImage(prompt, loras, disableSafetyChecker, idToken);
