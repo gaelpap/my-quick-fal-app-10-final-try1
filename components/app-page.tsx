@@ -9,7 +9,7 @@ import { signOut } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
 import { UserImages } from './UserImages'
 import { User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, setDoc } from 'firebase/firestore';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
 
@@ -105,11 +105,17 @@ export function Page() {
     setIsLoading(true);
     setImageUrl(''); // Clear previous image
     try {
-      const idToken = await user.getIdToken();
-      const result = await generateImage(prompt, loras, disableSafetyChecker, idToken);
+      const result = await generateImage(prompt, loras, disableSafetyChecker);
       console.log('Generation result:', result);
       if (result.imageUrl) {
         setImageUrl(result.imageUrl);
+        // Save the generated image to Firestore
+        const imageRef = doc(collection(db, 'users', user.uid, 'images'));
+        await setDoc(imageRef, {
+          prompt: prompt,
+          imageUrl: result.imageUrl,
+          createdAt: new Date().toISOString(),
+        });
       } else {
         throw new Error('No image URL in the response');
       }
