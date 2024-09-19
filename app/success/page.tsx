@@ -89,7 +89,7 @@ function SuccessContent() {
   );
 }
 
-export default function SuccessPage() {
+function SuccessPageContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
 
@@ -106,9 +106,13 @@ export default function SuccessPage() {
     );
   }
 
+  return <SuccessContent />;
+}
+
+export default function SuccessPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <SuccessContent />
+      <SuccessPageContent />
     </Suspense>
   );
 }
