@@ -7,14 +7,15 @@ import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user) {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+      if (!currentUser) {
         router.push('/login');
-      } else {
-        setLoading(false);
       }
     });
 
@@ -23,6 +24,10 @@ export default function Home() {
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return null; // This will prevent any flash of content before redirect
   }
 
   return <Page />;

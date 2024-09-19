@@ -1,9 +1,12 @@
-import { Suspense } from 'react';
+'use client'
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
-import { doc, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { stripe } from '@/lib/stripe';
 
-async function verifySubscription(sessionId: string) {
+async function verifySubscription(sessionId: string, userId: string) {
   console.log('Verifying subscription for session:', sessionId);
   try {
     console.log('Attempting to retrieve session from Stripe');
@@ -17,16 +20,13 @@ async function verifySubscription(sessionId: string) {
         return 'Error: No user reference found';
       }
       
-      // Ensure the user is authenticated
-      const currentUser = auth.currentUser;
-      console.log('Current user:', currentUser ? currentUser.uid : 'No user');
-      if (!currentUser || currentUser.uid !== session.client_reference_id) {
-        console.error('User not authenticated or mismatch');
-        return 'Error: Authentication required';
+      if (userId !== session.client_reference_id) {
+        console.error('User mismatch');
+        return 'Error: User mismatch';
       }
 
-      const userRef = doc(db, 'users', session.client_reference_id);
-      console.log('Updating user document for:', session.client_reference_id);
+      const userRef = doc(db, 'users', userId);
+      console.log('Updating user document for:', userId);
       try {
         await setDoc(userRef, { isSubscribed: true }, { merge: true });
         console.log('Updated user document');
@@ -50,18 +50,36 @@ async function verifySubscription(sessionId: string) {
   }
 }
 
-export default async function SuccessPage({
+export default function SuccessPage({
   searchParams,
 }: {
   searchParams: { session_id: string };
 }) {
-  console.log('Received search params:', searchParams);
-  const sessionId = searchParams.session_id;
-  if (!sessionId) {
-    console.error('No session_id found in search params');
-    return <div>Error: No session ID provided</div>;
-  }
-  const message = await verifySubscription(sessionId);
+  const [message, setMessage] = useState<string>('Verifying subscription...');
+  const router = useRouter();
+
+  useEffect(() => {
+    const sessionId = searchParams.session_id;
+    if (!sessionId) {
+      console.error('No session_id found in search params');
+      setMessage('Error: No session ID provided');
+      return;
+    }
+
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const result = await verifySubscription(sessionId, user.uid);
+        setMessage(result);
+      } else {
+        console.error('User not authenticated');
+        setMessage('Error: Authentication required');
+        // Optionally, redirect to login page
+        // router.push('/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [searchParams, router]);
 
   return (
     <div>
