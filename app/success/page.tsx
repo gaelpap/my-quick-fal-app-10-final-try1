@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { stripe } from '@/lib/stripe';
@@ -50,29 +50,29 @@ async function verifySubscription(sessionId: string, userId: string) {
   }
 }
 
-export default function SuccessPage({
-  searchParams,
-}: {
-  searchParams: { session_id: string };
-}) {
+export default function SuccessPage() {
   const [message, setMessage] = useState<string>('Verifying subscription...');
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const sessionId = searchParams.session_id;
+    const sessionId = searchParams.get('session_id');
+    console.log('Session ID from URL:', sessionId);
+
     if (!sessionId) {
       console.error('No session_id found in search params');
-      setMessage('Error: No session ID provided');
+      setMessage('Error: No session ID provided. Please contact support.');
       return;
     }
 
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
+        console.log('User authenticated:', user.uid);
         const result = await verifySubscription(sessionId, user.uid);
         setMessage(result);
       } else {
         console.error('User not authenticated');
-        setMessage('Error: Authentication required');
+        setMessage('Error: Authentication required. Please log in and try again.');
         // Optionally, redirect to login page
         // router.push('/login');
       }

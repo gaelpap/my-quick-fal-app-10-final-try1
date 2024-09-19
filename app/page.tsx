@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { Page } from '@/components/app-page';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { User } from 'firebase/auth';
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   useEffect(() => {
