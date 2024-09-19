@@ -12,9 +12,7 @@ import { User } from 'firebase/auth';
 import { doc, getDoc, collection, setDoc } from 'firebase/firestore';
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
-
-// Remove this line
-// const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+import { Select } from "@/components/ui/select"
 
 interface LoRA {
   path: string;
@@ -30,6 +28,8 @@ export function Page() {
   const [user, setUser] = useState<User | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
+  const [language, setLanguage] = useState('en')
+  const [translatedPrompt, setTranslatedPrompt] = useState('')
 
   const router = useRouter()
 
@@ -96,6 +96,23 @@ export function Page() {
     setLoras(newLoras)
   }
 
+  const translatePrompt = async (text: string, targetLang: string) => {
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text, targetLang }),
+      });
+      const data = await response.json();
+      return data.translatedText;
+    } catch (error) {
+      console.error('Translation error:', error);
+      return text; // Return original text if translation fails
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -105,6 +122,10 @@ export function Page() {
     setIsLoading(true);
     setImageUrl(''); // Clear previous image
     try {
+      // Translate prompt only if language is French
+      const promptToUse = language === 'fr' ? await translatePrompt(prompt, 'en') : prompt;
+      setTranslatedPrompt(language === 'fr' ? promptToUse : '');
+
       console.log('Submitting image generation request');
       const idToken = await user.getIdToken();
       const response = await fetch('/api/generate-image', {
@@ -113,7 +134,7 @@ export function Page() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({ prompt, loras, disableSafetyChecker }),
+        body: JSON.stringify({ prompt: promptToUse, loras, disableSafetyChecker }),
       });
 
       if (!response.ok) {
@@ -216,13 +237,23 @@ export function Page() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="mb-4">
-          <Input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Enter your prompt"
-            className="w-full p-2 mb-2 border rounded"
-          />
+          <div className="flex mb-2">
+            <Input
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={language === 'en' ? "Enter your prompt" : "Entrez votre prompt"}
+              className="flex-grow p-2 mr-2 border rounded"
+            />
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+            </select>
+          </div>
           {loras.map((lora, index) => (
             <div key={index} className="flex mb-2">
               <Input
@@ -293,6 +324,11 @@ export function Page() {
         </div>
       )}
       <UserImages />
+      {translatedPrompt && language === 'fr' && (
+        <p className="mt-2 text-sm text-gray-600">
+          Translated prompt: {translatedPrompt}
+        </p>
+      )}
     </div>
   )
 }
