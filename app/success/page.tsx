@@ -4,48 +4,37 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { stripe } from '@/lib/stripe';
 
 async function verifySubscription(sessionId: string, userId: string) {
   console.log('Verifying subscription for session:', sessionId);
   try {
     console.log('Attempting to retrieve session from Stripe');
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    console.log('Retrieved session:', JSON.stringify(session, null, 2));
+    const response = await fetch('/api/verify-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sessionId, userId }),
+    });
 
-    if (session.payment_status === 'paid') {
-      console.log('Payment status is paid');
-      if (!session.client_reference_id) {
-        console.error('No client_reference_id found in session');
-        return 'Error: No user reference found';
-      }
-      
-      if (userId !== session.client_reference_id) {
-        console.error('User mismatch');
-        return 'Error: User mismatch';
-      }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
+    const result = await response.json();
+    console.log('Verification result:', result);
+
+    if (result.success) {
       const userRef = doc(db, 'users', userId);
       console.log('Updating user document for:', userId);
-      try {
-        await setDoc(userRef, { isSubscribed: true }, { merge: true });
-        console.log('Updated user document');
-        return 'Subscription successful! You can now generate images.';
-      } catch (updateError) {
-        console.error('Error updating user document:', updateError);
-        return `Error updating user document: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`;
-      }
+      await setDoc(userRef, { isSubscribed: true }, { merge: true });
+      console.log('Updated user document');
+      return 'Subscription successful! You can now generate images.';
     } else {
-      console.log('Payment status is not paid:', session.payment_status);
       return 'Failed to verify subscription. Please contact support.';
     }
   } catch (error) {
     console.error('Error verifying subscription:', error);
-    if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
     return `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`;
   }
 }

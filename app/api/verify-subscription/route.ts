@@ -6,16 +6,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 })
 
 export async function POST(request: Request) {
-  const { sessionId } = await request.json()
+  const { sessionId, userId } = await request.json()
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
 
-    if (session.payment_status === 'paid') {
-      return NextResponse.json({ 
-        success: true, 
-        userId: session.client_reference_id 
-      })
+    if (session.payment_status === 'paid' && session.client_reference_id === userId) {
+      return NextResponse.json({ success: true })
     } else {
       return NextResponse.json({ success: false })
     }
