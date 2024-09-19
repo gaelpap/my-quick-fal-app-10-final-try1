@@ -59,11 +59,14 @@ function SuccessContent() {
         console.log('User authenticated:', user.uid);
         const result = await verifySubscription(sessionId, user.uid);
         setMessage(result);
+        if (result.includes('Subscription successful')) {
+          setTimeout(() => {
+            router.push('/');  // Redirect to the main page after 3 seconds
+          }, 3000);
+        }
       } else {
         console.error('User not authenticated');
         setMessage('Error: Authentication required. Please log in and try again.');
-        // Optionally, redirect to login page
-        // router.push('/login');
       }
     });
 
@@ -74,6 +77,9 @@ function SuccessContent() {
     <div>
       <h1>Subscription Status</h1>
       <p>{message}</p>
+      {message.includes('Subscription successful') && (
+        <p>Redirecting to the main page in 3 seconds...</p>
+      )}
     </div>
   );
 }

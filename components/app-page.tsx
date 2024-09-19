@@ -107,7 +107,11 @@ export function Page() {
       const idToken = await user.getIdToken();
       const result = await generateImage(prompt, loras, disableSafetyChecker, idToken);
       console.log('Generation result:', result);
-      setImageUrl(result.imageUrl);
+      if (result.imageUrl) {
+        setImageUrl(result.imageUrl);
+      } else {
+        throw new Error('No image URL in the response');
+      }
     } catch (error) {
       console.error('Error generating image:', error);
       if (error instanceof Error) {
@@ -257,6 +261,7 @@ export function Page() {
             width={500}
             height={500}
             layout="responsive"
+            onError={() => console.error('Error loading image')}
           />
         </div>
       )}
