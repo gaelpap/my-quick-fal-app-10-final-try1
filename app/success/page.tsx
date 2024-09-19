@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -50,7 +50,7 @@ async function verifySubscription(sessionId: string, userId: string) {
   }
 }
 
-export default function SuccessPage() {
+function SuccessContent() {
   const [message, setMessage] = useState<string>('Verifying subscription...');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -86,5 +86,29 @@ export default function SuccessPage() {
       <h1>Subscription Status</h1>
       <p>{message}</p>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('session_id');
+
+  console.log('SuccessPage rendered. Session ID:', sessionId);
+
+  if (!sessionId) {
+    console.error('No session_id found in SuccessPage');
+    return (
+      <div>
+        <h1>Subscription Status</h1>
+        <p>Error: No session ID provided. Please contact support.</p>
+        <p>Debug info: {JSON.stringify(Object.fromEntries(searchParams.entries()))}</p>
+      </div>
+    );
+  }
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }

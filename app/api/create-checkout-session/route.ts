@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       recurring: { interval: 'month' },
     });
 
+    const origin = request.headers.get('origin');
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -32,12 +33,12 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'subscription',
-      success_url: `${request.headers.get('origin')}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.headers.get('origin')}/`,
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/`,
       client_reference_id: userId,
     });
     console.log('Created session:', session.id);
-    console.log('Session details:', JSON.stringify(session, null, 2));
+    console.log('Success URL:', `${origin}/success?session_id=${session.id}`);
 
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {
