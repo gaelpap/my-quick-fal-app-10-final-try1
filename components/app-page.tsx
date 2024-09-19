@@ -105,10 +105,26 @@ export function Page() {
     setIsLoading(true);
     setImageUrl(''); // Clear previous image
     try {
-      const result = await generateImage(prompt, loras, disableSafetyChecker);
+      console.log('Submitting image generation request');
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ prompt, loras, disableSafetyChecker }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
       console.log('Generation result:', result);
       if (result.imageUrl) {
         setImageUrl(result.imageUrl);
+        console.log('Image URL set:', result.imageUrl);
         // Save the generated image to Firestore
         const imageRef = doc(collection(db, 'users', user.uid, 'images'));
         await setDoc(imageRef, {
@@ -116,6 +132,7 @@ export function Page() {
           imageUrl: result.imageUrl,
           createdAt: new Date().toISOString(),
         });
+        console.log('Image saved to Firestore');
       } else {
         throw new Error('No image URL in the response');
       }
@@ -268,7 +285,10 @@ export function Page() {
             width={500}
             height={500}
             layout="responsive"
-            onError={() => console.error('Error loading image')}
+            onError={(e) => {
+              console.error('Error loading image:', imageUrl);
+              e.currentTarget.src = '/placeholder-image.jpg'; // Replace with a placeholder image
+            }}
           />
         </div>
       )}
