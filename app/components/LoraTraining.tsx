@@ -15,7 +15,7 @@ function LoraTraining() {
   const [triggerWord, setTriggerWord] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [savedModels, setSavedModels] = useState<{id: string, url: string}[]>([]);
+  const [savedModels, setSavedModels] = useState<{id: string, url: string, triggerWord: string}[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,7 +29,10 @@ function LoraTraining() {
       try {
         const q = query(collection(db, "loraModels"), where("userId", "==", user.uid));
         const querySnapshot = await getDocs(q);
-        const models = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as {url: string} }));
+        const models = querySnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() as {url: string, triggerWord: string} 
+        }));
         setSavedModels(models);
       } catch (err) {
         if (err instanceof FirebaseError) {
@@ -155,8 +158,8 @@ function LoraTraining() {
         await addDoc(collection(db, "loraModels"), {
           userId: user.uid,
           url: modelUrl,
-          createdAt: new Date(),
-          triggerWord: triggerWord
+          triggerWord: triggerWord,
+          createdAt: new Date()
         });
         await fetchSavedModels();
       } catch (error) {
@@ -207,7 +210,10 @@ function LoraTraining() {
           <ul>
             {savedModels.map((model) => (
               <li key={model.id} className="mb-2">
-                <a href={model.url} download className="text-blue-500 hover:text-blue-700 underline">{model.url}</a>
+                <span className="font-semibold text-gray-700">{model.triggerWord}: </span>
+                <a href={model.url} download className="text-blue-500 hover:text-blue-700 underline">
+                  Download Model
+                </a>
               </li>
             ))}
           </ul>
