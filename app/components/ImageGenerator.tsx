@@ -7,16 +7,17 @@ export function ImageGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState('english');
+  const [disableSafetyChecker, setDisableSafetyChecker] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setGeneratedImage(null);
 
     try {
-      console.log('Generating image with prompt:', prompt, 'and language:', language);
-      console.log('FAL_AI_API_KEY:', process.env.NEXT_PUBLIC_FAL_AI_API_KEY ? 'Set (length: ' + process.env.NEXT_PUBLIC_FAL_AI_API_KEY.length + ')' : 'Not set');
-      const imageUrl = await generateImage(prompt, language);
+      console.log('Generating image with prompt:', prompt, 'language:', language, 'disableSafetyChecker:', disableSafetyChecker);
+      const imageUrl = await generateImage(prompt, language, disableSafetyChecker);
       console.log('Generated image URL:', imageUrl);
       setGeneratedImage(imageUrl);
     } catch (err) {
@@ -72,6 +73,17 @@ export function ImageGenerator() {
               <span className="ml-2 text-black" style={{color: 'black'}}>French</span>
             </label>
           </div>
+        </div>
+        <div className="mb-4">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={disableSafetyChecker}
+              onChange={(e) => setDisableSafetyChecker(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-blue-600"
+            />
+            <span className="ml-2 text-black" style={{color: 'black'}}>Disable Safety Checker (Allow NSFW content)</span>
+          </label>
         </div>
         <button
           type="submit"
