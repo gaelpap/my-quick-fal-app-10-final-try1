@@ -14,7 +14,7 @@ interface LoRA {
 export async function generateImage(prompt: string, loras: LoRA[], disableSafetyChecker: boolean) {
   try {
     console.log('Generating image with params:', { prompt, loras, disableSafetyChecker });
-    const result = await fal.run('fal-ai/fast-sdxl', {
+    const result = await fal.run('fal-ai/flux-lora', {
       input: {
         prompt: prompt,
         loras: loras,
