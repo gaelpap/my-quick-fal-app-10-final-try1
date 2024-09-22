@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { auth } from '@/lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20', // Update this line
+  apiVersion: '2024-06-20',
 });
 
 export async function POST(request: Request) {
@@ -33,6 +33,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No priceId provided' }, { status: 400 });
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://your-app-name.vercel.app'; // Replace with your actual default URL
+    console.log('Base URL:', baseUrl);
+
     console.log('Creating Stripe checkout session...');
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -43,8 +46,8 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscription`,
+      success_url: `${baseUrl}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/subscription`,
       client_reference_id: userId,
     });
 
