@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const SubscriptionSuccessContent: React.FC = () => {
   const [message, setMessage] = useState('Verifying your subscription...');
@@ -29,8 +29,13 @@ const SubscriptionSuccessContent: React.FC = () => {
           const userDoc = await getDoc(userRef);
           
           if (!userDoc.exists()) {
-            console.error('User document does not exist');
-            setMessage('Error: User document not found. Please contact support.');
+            console.log('User document does not exist, creating it');
+            await setDoc(userRef, {
+              email: user.email,
+              createdAt: new Date().toISOString(),
+            });
+            setMessage('User account created. Please try subscribing again.');
+            setTimeout(() => router.push('/subscription'), 3000);
             return;
           }
 

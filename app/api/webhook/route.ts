@@ -54,8 +54,19 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Unknown price ID' }, { status: 400 });
         }
 
-        await userRef.update(updateData);
-        console.log('✅ User document updated');
+        // Check if the document exists, if not create it
+        const doc = await userRef.get();
+        if (!doc.exists) {
+          await userRef.set({
+            email: session.customer_details?.email,
+            createdAt: new Date().toISOString(),
+            ...updateData
+          });
+          console.log('✅ User document created and updated');
+        } else {
+          await userRef.update(updateData);
+          console.log('✅ User document updated');
+        }
 
         // Verify the update
         const updatedUserDoc = await userRef.get();
