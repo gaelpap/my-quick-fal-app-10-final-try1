@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-const SubscriptionSuccessPage: React.FC = () => {
+const SubscriptionSuccessContent: React.FC = () => {
   const [message, setMessage] = useState('Verifying your subscription...');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -66,6 +66,14 @@ const SubscriptionSuccessPage: React.FC = () => {
         <p>{message}</p>
       </div>
     </div>
+  );
+};
+
+const SubscriptionSuccessPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SubscriptionSuccessContent />
+    </Suspense>
   );
 };
 
