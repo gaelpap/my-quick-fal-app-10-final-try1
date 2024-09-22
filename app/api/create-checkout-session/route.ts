@@ -1,48 +1,61 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { auth } from '@/lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2024-06-20', // Update this line
 });
 
 export async function POST(request: Request) {
-  const { userId } = await request.json();
-  console.log('Received userId:', userId);
-
+  console.log('Received request to create-checkout-session');
   try {
-    // Create a free product if it doesn't exist
-    let product = await stripe.products.create({
-      name: 'Free Subscription',
-    });
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Unauthorized: No valid Authorization header');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Create a free price for the product
-    let price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: 0,
-      currency: 'usd',
-      recurring: { interval: 'month' },
-    });
+    const idToken = authHeader.split('Bearer ')[1];
+    let decodedToken;
+    try {
+      decodedToken = await auth.verifyIdToken(idToken);
+    } catch (verifyError) {
+      console.error('Error verifying ID token:', verifyError);
+      return NextResponse.json({ error: 'Invalid ID token' }, { status: 401 });
+    }
+    const userId = decodedToken.uid;
 
-    const origin = request.headers.get('origin');
+    const { priceId } = await request.json();
+    console.log('Received priceId:', priceId);
+
+    if (!priceId) {
+      console.error('No priceId provided');
+      return NextResponse.json({ error: 'No priceId provided' }, { status: 400 });
+    }
+
+    console.log('Creating Stripe checkout session...');
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: price.id,
+          price: priceId,
           quantity: 1,
         },
       ],
       mode: 'subscription',
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscription`,
       client_reference_id: userId,
     });
-    console.log('Created session:', session.id);
-    console.log('Success URL:', `${origin}/success?session_id=${session.id}`);
 
+    console.log('Stripe session created:', session.id);
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
-    return NextResponse.json({ error: 'Error creating checkout session' }, { status: 500 });
+    console.error('Error in create-checkout-session API:', error);
+    if (error instanceof Error) {
+      return NextResponse.json({ error: 'Internal Server Error', details: error.message, stack: error.stack }, { status: 500 });
+    } else {
+      return NextResponse.json({ error: 'Internal Server Error', details: 'Unknown error' }, { status: 500 });
+    }
   }
 }

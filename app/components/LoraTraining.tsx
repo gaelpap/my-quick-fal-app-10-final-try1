@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { signOut } from 'firebase/auth';
 import JSZip from 'jszip';
-
-// Remove these lines
-// fal.config({
-//   credentials: process.env.NEXT_PUBLIC_FAL_AI_API_KEY,
-// });
+import { useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button";
 
 function LoraTraining() {
   const [files, setFiles] = useState<File[]>([]);
@@ -17,10 +15,39 @@ function LoraTraining() {
   const [result, setResult] = useState<string | null>(null);
   const [savedModels, setSavedModels] = useState<{id: string, url: string, triggerWord: string}[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    fetchSavedModels();
-  }, []);
+    const checkSubscription = async (user: any) => {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        const subscriptionStatus = userData?.isLoraTrainingSubscribed || false;
+        console.log('Lora Training subscription status:', subscriptionStatus);
+        setIsSubscribed(subscriptionStatus);
+      } catch (err) {
+        console.error('Error checking subscription:', err);
+        setError('Failed to check subscription status');
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        checkSubscription(user);
+        fetchSavedModels();
+      } else {
+        setIsSubscribed(false);
+        setCheckingSubscription(false);
+        router.push('/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   const fetchSavedModels = async () => {
     setError(null);
@@ -171,9 +198,48 @@ function LoraTraining() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('User signed out');
+      router.push('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  if (checkingSubscription) {
+    return <div>Checking subscription status...</div>;
+  }
+
+  if (!isSubscribed) {
+    return (
+      <div className="container mx-auto p-4 bg-white shadow-lg rounded-lg">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-gray-800">Lora Training Subscription Required</h1>
+          <Button onClick={handleLogout} className="bg-red-500 text-white">
+            Logout
+          </Button>
+        </div>
+        <p className="mb-4">You need to subscribe to access the Lora Training feature.</p>
+        <button
+          onClick={() => router.push('/subscription')}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Subscribe Now
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-4 bg-white shadow-lg rounded-lg">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">Lora Training</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">Lora Training</h1>
+        <Button onClick={handleLogout} className="bg-red-500 text-white">
+          Logout
+        </Button>
+      </div>
       <form onSubmit={handleSubmit} className="mb-8">
         <div className="mb-4">
           <label className="block mb-2 text-gray-700">Upload Images (ZIP file recommended)</label>

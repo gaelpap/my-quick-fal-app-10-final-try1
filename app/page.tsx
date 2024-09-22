@@ -6,6 +6,8 @@ import LoraTraining from './components/LoraTraining';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { User } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,16 @@ export default function Home() {
     return () => unsubscribe();
   }, [router]);
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('User signed out');
+      router.push('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -37,6 +49,11 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100">
       {!selectedApp ? (
         <div className="flex flex-col items-center justify-center min-h-screen">
+          <div className="w-full flex justify-end p-4">
+            <Button onClick={handleLogout} className="bg-red-500 text-white">
+              Logout
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold mb-8 text-gray-800">Choose an App</h1>
           <div className="space-x-4">
             <button

@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { generateImage } from '../../lib/image-generation';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 export function ImageGenerator() {
   const [prompt, setPrompt] = useState('');
@@ -8,6 +11,33 @@ export function ImageGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState('english');
   const [disableSafetyChecker, setDisableSafetyChecker] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        const subscriptionStatus = userData?.isSubscribed || false;
+        console.log('Image Generator subscription status:', subscriptionStatus);
+        setIsSubscribed(subscriptionStatus);
+      } else {
+        setIsSubscribed(false);
+      }
+    };
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        checkSubscription();
+      } else {
+        setIsSubscribed(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +57,21 @@ export function ImageGenerator() {
       setIsLoading(false);
     }
   };
+
+  if (!isSubscribed) {
+    return (
+      <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h2 className="text-2xl font-bold mb-4">Subscription Required</h2>
+        <p className="mb-4">You need to subscribe to use the Image Generator.</p>
+        <button
+          onClick={() => router.push('/subscription')}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          Subscribe Now
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">

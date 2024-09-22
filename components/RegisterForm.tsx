@@ -22,7 +22,8 @@ export default function RegisterForm() {
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         createdAt: new Date().toISOString(),
-        isSubscribed: false, // Add this line
+        isSubscribed: false,
+        isLoraTrainingSubscribed: false, // Add this line
       });
 
       setSuccess(true);

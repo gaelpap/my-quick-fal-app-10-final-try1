@@ -179,45 +179,8 @@ export function Page() {
     }
   };
 
-  const handleSubscribe = async () => {
-    if (!user) {
-      console.error('No user found');
-      return;
-    }
-    if (!stripePromise) {
-      console.error('Stripe has not loaded yet');
-      return;
-    }
-    try {
-      const stripe = await stripePromise;
-      if (!stripe) {
-        console.error('Stripe failed to load');
-        return;
-      }
-      console.log('Fetching checkout session...');
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user.uid }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response from create-checkout-session:', errorData);
-        throw new Error('Failed to create checkout session');
-      }
-      console.log('Checkout session response:', response);
-      const { sessionId } = await response.json();
-      console.log('Session ID:', sessionId);
-      const result = await stripe.redirectToCheckout({ sessionId });
-      if (result.error) {
-        console.error('Stripe redirect error:', result.error);
-        alert(result.error.message);
-      }
-    } catch (error) {
-      console.error('Error in handleSubscribe:', error);
-    }
+  const handleRedirectToSubscription = () => {
+    router.push('/subscription');
   };
 
   return (
@@ -231,8 +194,8 @@ export function Page() {
       {!isSubscribed ? (
         <div className="text-center py-8">
           <h2 className="text-xl mb-4">Subscribe to start generating images</h2>
-          <Button onClick={handleSubscribe} className="bg-blue-500 text-white">
-            Subscribe for Free (Test Mode)
+          <Button onClick={handleRedirectToSubscription} className="bg-blue-500 text-white">
+            Choose Subscription
           </Button>
         </div>
       ) : (
