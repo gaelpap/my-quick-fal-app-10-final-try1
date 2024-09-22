@@ -20,12 +20,20 @@ const SubscriptionSuccessContent: React.FC = () => {
       }
 
       let retries = 0;
-      const maxRetries = 10; // Increase max retries
+      const maxRetries = 10;
 
       const checkSubscription = async (user: any) => {
         try {
           console.log('Checking subscription for user:', user.uid);
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userRef);
+          
+          if (!userDoc.exists()) {
+            console.error('User document does not exist');
+            setMessage('Error: User document not found. Please contact support.');
+            return;
+          }
+
           const userData = userDoc.data();
           console.log('User data:', userData);
           
@@ -36,7 +44,7 @@ const SubscriptionSuccessContent: React.FC = () => {
             if (retries < maxRetries) {
               retries++;
               setMessage(`Subscription not yet reflected. Retrying... (Attempt ${retries}/${maxRetries})`);
-              setTimeout(() => checkSubscription(user), 5000); // Wait 5 seconds before retrying
+              setTimeout(() => checkSubscription(user), 5000);
             } else {
               setMessage('Subscription update is taking longer than expected. Please contact support if this persists.');
             }

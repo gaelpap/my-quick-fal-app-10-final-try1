@@ -26,7 +26,6 @@ export async function POST(request: Request) {
 
   console.log('✅ Success:', event.id, 'Event type:', event.type);
 
-  // Handle the checkout.session.completed event
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.client_reference_id;
@@ -43,15 +42,20 @@ export async function POST(request: Request) {
       if (userId) {
         const userRef = db.collection('users').doc(userId);
         
+        let updateData = {};
         if (priceId === 'price_1Q1qMUEI2MwEjNuQm64hm1gc') {
-          await userRef.update({ isSubscribed: true });
-          console.log('✅ Updated user subscription status for Image Generator');
+          updateData = { isSubscribed: true };
+          console.log('✅ Updating user subscription status for Image Generator');
         } else if (priceId === 'price_1Q1qDaEI2MwEjNuQ9Ol8x4xV') {
-          await userRef.update({ isLoraTrainingSubscribed: true });
-          console.log('✅ Updated user subscription status for Lora Training');
+          updateData = { isLoraTrainingSubscribed: true };
+          console.log('✅ Updating user subscription status for Lora Training');
         } else {
           console.log(`⚠️  Unknown price ID: ${priceId}`);
+          return NextResponse.json({ error: 'Unknown price ID' }, { status: 400 });
         }
+
+        await userRef.update(updateData);
+        console.log('✅ User document updated');
 
         // Verify the update
         const updatedUserDoc = await userRef.get();
@@ -59,9 +63,11 @@ export async function POST(request: Request) {
         console.log('📄 Updated user data:', updatedUserData);
       } else {
         console.log('⚠️  No userId found in session');
+        return NextResponse.json({ error: 'No userId found in session' }, { status: 400 });
       }
     } catch (error) {
       console.error('❌ Error processing event:', error);
+      return NextResponse.json({ error: 'Error processing event' }, { status: 500 });
     }
   }
 
