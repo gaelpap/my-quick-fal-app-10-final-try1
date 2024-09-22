@@ -10,6 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: Request) {
+  console.log('Webhook received');
   const buf = await request.text();
   const sig = request.headers.get('stripe-signature')!;
 
@@ -17,12 +18,13 @@ export async function POST(request: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
+    console.log('Webhook verified');
   } catch (err) {
     console.error('⚠️  Webhook signature verification failed:', err);
     return NextResponse.json({ error: 'Webhook Error' }, { status: 400 });
   }
 
-  console.log('✅ Success:', event.id);
+  console.log('✅ Success:', event.id, 'Event type:', event.type);
 
   // Handle the checkout.session.completed event
   if (event.type === 'checkout.session.completed') {

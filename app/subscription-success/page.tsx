@@ -13,18 +13,21 @@ const SubscriptionSuccessContent: React.FC = () => {
   useEffect(() => {
     const verifySubscription = async () => {
       const sessionId = searchParams?.get('session_id');
+      console.log('Session ID:', sessionId);
       if (!sessionId) {
         setMessage('Invalid session. Please try again.');
         return;
       }
 
       let retries = 0;
-      const maxRetries = 5;
+      const maxRetries = 10; // Increase max retries
 
       const checkSubscription = async (user: any) => {
         try {
+          console.log('Checking subscription for user:', user.uid);
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           const userData = userDoc.data();
+          console.log('User data:', userData);
           
           if (userData?.isSubscribed || userData?.isLoraTrainingSubscribed) {
             setMessage('Subscription successful! Redirecting to app selection...');
