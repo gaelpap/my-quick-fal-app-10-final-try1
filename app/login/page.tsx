@@ -52,7 +52,7 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-black" // Added text-black class
             required
           />
           <button type="submit" className="w-full p-2 bg-blue-500 text-white rounded">
@@ -82,7 +82,7 @@ export default function Login() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border rounded text-black" // Added text-black class
           required
         />
         <input
@@ -90,7 +90,7 @@ export default function Login() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border rounded text-black" // Added text-black class
           required
         />
         <button type="submit" className="w-full p-2 bg-blue-500 text-white rounded">
