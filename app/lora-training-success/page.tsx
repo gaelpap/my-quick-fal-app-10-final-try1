@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 async function verifyLoraTrainingPurchase(sessionId: string, userId: string) {
   try {
+    console.log('Verifying Lora training purchase:', { sessionId, userId });
     const response = await fetch('/api/verify-lora-training-purchase', {
       method: 'POST',
       headers: {
@@ -16,15 +17,17 @@ async function verifyLoraTrainingPurchase(sessionId: string, userId: string) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error || 'Unknown error'}`);
     }
 
     const result = await response.json();
+    console.log('Verification result:', result);
 
     if (result.success) {
       return 'Lora training purchase successful! You can now train a new Lora model.';
     } else {
-      return 'Failed to verify purchase. Please contact support.';
+      return `Failed to verify purchase: ${result.error || 'Unknown error'}`;
     }
   } catch (error) {
     console.error('Error verifying Lora training purchase:', error);
