@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { doc, updateDoc, increment } from 'firebase/firestore';
@@ -36,7 +36,7 @@ async function verifyLoraTrainingPurchase(sessionId: string, userId: string) {
   }
 }
 
-export default function LoraTrainingSuccess() {
+function LoraTrainingSuccessContent() {
   const [message, setMessage] = useState<string>('Verifying purchase...');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,5 +71,13 @@ export default function LoraTrainingSuccess() {
       <h1>Lora Training Purchase Status</h1>
       <p>{message}</p>
     </div>
+  );
+}
+
+export default function LoraTrainingSuccess() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoraTrainingSuccessContent />
+    </Suspense>
   );
 }
