@@ -34,6 +34,7 @@ export default function StartLoraTraining() {
 
       const imageUrls = await uploadImages(images);
       
+      console.log('Sending request to fal.ai with:', { triggerWord, imageUrls });
       const result = await fal.subscribe("fal-ai/lora-training", {
         input: {
           instance_prompt: triggerWord,
@@ -41,8 +42,14 @@ export default function StartLoraTraining() {
         },
       });
 
-      if (result.error) {
+      console.log('Received result from fal.ai:', result);
+
+      if ('error' in result) {
         throw new Error(result.error);
+      }
+
+      if (!result.images || result.images.length === 0) {
+        throw new Error('No images returned from fal.ai');
       }
 
       const loraUrl = result.images[0].url;
@@ -61,18 +68,16 @@ export default function StartLoraTraining() {
       router.push('/lora-training');
     } catch (error) {
       console.error('Error starting Lora training:', error);
-      setError('Failed to start Lora training. Please try again.');
+      setError(`Failed to start Lora training: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const uploadImages = async (files: File[]): Promise<string[]> => {
-    // Implement your image upload logic here
-    // This should upload the images and return an array of URLs
-    // You may want to use Firebase Storage or another service for this
-    // For now, we'll return a placeholder
-    return ['https://placeholder-image-url.com'];
+    // TODO: Implement actual image upload logic
+    console.log('Uploading images:', files);
+    return files.map(() => 'https://placeholder-image-url.com');
   };
 
   return (
