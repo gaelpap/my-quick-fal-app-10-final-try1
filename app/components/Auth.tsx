@@ -1,16 +1,28 @@
 import { useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-// ... other imports
 
 function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(false); // Default to register page
   const [message, setMessage] = useState('');
   const [isResetPassword, setIsResetPassword] = useState(false);
 
-  // ... existing handleSubmit function
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, email, password);
+        setMessage('Logged in successfully!');
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+        setMessage('Registered successfully!');
+      }
+    } catch (error) {
+      setMessage('An error occurred. Please try again.');
+    }
+  };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +37,7 @@ function Auth() {
   if (isResetPassword) {
     return (
       <div>
+        <h1>AI Photo Creator</h1>
         <h2>Reset Password</h2>
         <form onSubmit={handleResetPassword}>
           <input
@@ -45,10 +58,24 @@ function Auth() {
   return (
     <div>
       <h1>AI Photo Creator</h1>
-      <p>Create stunning AI-generated photos of yourself in any style or scenario. {isLogin ? 'Login now:' : 'Register now:'}</p>
+      <p>Create stunning AI-generated photos of yourself in any style or scenario.</p>
       <h2>{isLogin ? 'Login' : 'Register'}</h2>
+      <p>{isLogin ? 'Login now:' : 'Register now:'}</p>
       <form onSubmit={handleSubmit}>
-        {/* ... existing form fields */}
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          required
+        />
         <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
       </form>
       <button onClick={() => setIsLogin(!isLogin)}>
