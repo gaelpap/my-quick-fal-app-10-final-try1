@@ -6,8 +6,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' as any, // Type assertion to avoid TypeScript error
 });
 
-// Lora training price ID
-const LORA_TRAINING_PRICE_ID = 'price_1Q2IxEEI2MwEjNuQfRYyWgRE';
+// Updated Lora training price ID
+const LORA_TRAINING_PRICE_ID = 'price_1Q2JSlEI2MwEjNuQQkKjPTDR';
 
 export async function POST(req: Request) {
   try {
