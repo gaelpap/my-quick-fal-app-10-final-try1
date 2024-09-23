@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import * as fal from "@fal-ai/serverless-client";
 
 fal.config({
@@ -32,9 +32,16 @@ export default function StartLoraTraining() {
       const user = auth.currentUser;
       if (!user) throw new Error('User not authenticated');
 
+      // Check if user has available trainings
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.data();
+      if (!userData?.loraTrainingsAvailable || userData.loraTrainingsAvailable < 1) {
+        throw new Error('No Lora trainings available. Please purchase a new training.');
+      }
+
       const imageUrls = await uploadImages(images);
       
-      console.log('Sending request to fal.ai with:', { triggerWord, imageUrls });
+      // Your original Lora training logic here
       const result = await fal.subscribe("fal-ai/lora-training", {
         input: {
           instance_prompt: triggerWord,
@@ -42,10 +49,8 @@ export default function StartLoraTraining() {
         },
       });
 
-      console.log('Received result from fal.ai:', result);
-
       if ('error' in result) {
-        throw new Error(result.error);
+        throw new Error(result.error as string);
       }
 
       if (!result.images || result.images.length === 0) {
@@ -54,14 +59,15 @@ export default function StartLoraTraining() {
 
       const loraUrl = result.images[0].url;
       
-      // Save the Lora URL to the user's document
+      // Save the Lora URL to the user's document and decrement available trainings
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
         loraModels: arrayUnion({
           url: loraUrl,
           triggerWord: triggerWord,
           createdAt: new Date().toISOString()
-        })
+        }),
+        loraTrainingsAvailable: userData.loraTrainingsAvailable - 1
       });
 
       alert('Lora training completed successfully!');
@@ -75,8 +81,10 @@ export default function StartLoraTraining() {
   };
 
   const uploadImages = async (files: File[]): Promise<string[]> => {
-    // TODO: Implement actual image upload logic
+    // Implement your existing image upload logic here
+    // This should return an array of image URLs
     console.log('Uploading images:', files);
+    // Replace this with your actual image upload logic
     return files.map(() => 'https://placeholder-image-url.com');
   };
 
