@@ -49,7 +49,7 @@ function LoraTraining() {
       <h2 className="text-2xl font-bold mb-4">Lora Training</h2>
       <p className="mb-4">Available trainings: {loraTrainingsAvailable}</p>
       {loraTrainingsAvailable > 0 ? (
-        <Link href="/your-original-lora-training-page" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        <Link href="/start-lora-training" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
           Start Lora Training
         </Link>
       ) : (
