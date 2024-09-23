@@ -31,7 +31,7 @@ async function verifySubscription(sessionId: string, userId: string) {
       const userData = userDoc.data();
       await setDoc(userRef, { 
         isSubscribed: true,
-        loraTrainingsAvailable: (userData?.loraTrainingsAvailable || 0) + 1
+        loraTrainingsAvailable: Math.max((userData?.loraTrainingsAvailable || 0) + 1, 1)
       }, { merge: true });
       console.log('Updated user document');
       return 'Subscription successful! You can now generate images and train one Lora model.';

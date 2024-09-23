@@ -62,6 +62,10 @@ function LoraTraining() {
     }
   };
 
+  const handlePurchaseTraining = () => {
+    router.push('/purchase-lora-training');
+  };
+
   if (loraTrainingsAvailable === null) {
     return <div className="text-black">Loading...</div>;
   }
@@ -80,9 +84,12 @@ function LoraTraining() {
       {loraTrainingsAvailable === 0 && (
         <div className="mt-4">
           <p>You have no Lora trainings available.</p>
-          <Link href="/purchase-lora-training" className="text-blue-500 underline">
+          <button
+            onClick={handlePurchaseTraining}
+            className="text-blue-500 underline"
+          >
             Purchase a new training
-          </Link>
+          </button>
         </div>
       )}
       {error && <p className="text-red-500 mt-4">{error}</p>}
