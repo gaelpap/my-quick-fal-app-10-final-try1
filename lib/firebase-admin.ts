@@ -1,17 +1,18 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
 
 if (!getApps().length) {
-  const adminCredentialsString = process.env.FIREBASE_ADMIN_CREDENTIALS;
-  if (!adminCredentialsString) {
-    throw new Error('FIREBASE_ADMIN_CREDENTIALS is not set');
-  }
-  const adminCredentials = JSON.parse(adminCredentialsString);
   initializeApp({
-    credential: cert(adminCredentials),
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+    }),
   });
 }
 
-export const auth = getAuth();
-export const db = getFirestore();
+const db = getFirestore();
+const auth = getAuth();
+
+export { db, auth, FieldValue };

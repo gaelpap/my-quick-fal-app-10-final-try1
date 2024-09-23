@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { db } from '@/lib/firebase-admin';
+import { db, FieldValue } from '@/lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' as any,
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       console.log('Payment status is paid, updating user document');
       const userRef = db.collection('users').doc(userId);
       await userRef.update({
-        loraTrainingsAvailable: db.FieldValue.increment(1)
+        loraTrainingsAvailable: FieldValue.increment(1)
       });
       console.log('User document updated successfully');
 
