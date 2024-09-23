@@ -1,8 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import * as fal from "@fal-ai/serverless-client";
+
+fal.config({
+  credentials: process.env.NEXT_PUBLIC_FAL_KEY,
+});
 
 export default function StartLoraTraining() {
   const [images, setImages] = useState<File[]>([]);
@@ -23,34 +29,50 @@ export default function StartLoraTraining() {
     setError(null);
 
     try {
-      const idToken = await auth.currentUser?.getIdToken();
-      const formData = new FormData();
-      images.forEach((image, index) => {
-        formData.append(`image${index}`, image);
-      });
-      formData.append('triggerWord', triggerWord);
+      const user = auth.currentUser;
+      if (!user) throw new Error('User not authenticated');
 
-      const response = await fetch('/api/train-lora', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
+      const imageUrls = await uploadImages(images);
+      
+      const result = await fal.subscribe("fal-ai/lora-training", {
+        input: {
+          instance_prompt: triggerWord,
+          images_data_url: imageUrls,
         },
-        body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to start Lora training');
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      const result = await response.json();
-      alert(result.message);
-      router.push('/lora-training'); // Redirect back to the Lora training page
+      const loraUrl = result.images[0].url;
+      
+      // Save the Lora URL to the user's document
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        loraModels: arrayUnion({
+          url: loraUrl,
+          triggerWord: triggerWord,
+          createdAt: new Date().toISOString()
+        })
+      });
+
+      alert('Lora training completed successfully!');
+      router.push('/lora-training');
     } catch (error) {
       console.error('Error starting Lora training:', error);
       setError('Failed to start Lora training. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    // Implement your image upload logic here
+    // This should upload the images and return an array of URLs
+    // You may want to use Firebase Storage or another service for this
+    // For now, we'll return a placeholder
+    return ['https://placeholder-image-url.com'];
   };
 
   return (
@@ -83,7 +105,7 @@ export default function StartLoraTraining() {
           disabled={isLoading || images.length === 0 || !triggerWord}
           className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400"
         >
-          {isLoading ? 'Starting Training...' : 'Start Training'}
+          {isLoading ? 'Training...' : 'Start Training'}
         </button>
       </form>
       {error && <p className="text-red-500 mt-4">{error}</p>}
