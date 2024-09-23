@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/firebase-admin';
-import { db } from '@/lib/firebase-admin';
+import { auth, db } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
   try {
@@ -25,8 +24,8 @@ export async function POST(req: Request) {
       loraTrainingsAvailable: userData.loraTrainingsAvailable - 1
     });
 
-    // Proceed with Lora training
-    // ... Your existing Lora training logic here ...
+    // Your existing Lora training logic goes here
+    // This should handle the file uploads, trigger word, and start the training process
 
     return NextResponse.json({ success: true, message: 'Lora training started successfully' });
   } catch (error) {
