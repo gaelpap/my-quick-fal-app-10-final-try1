@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 async function verifySubscription(sessionId: string, userId: string) {
   console.log('Verifying subscription for session:', sessionId);
@@ -27,9 +27,11 @@ async function verifySubscription(sessionId: string, userId: string) {
     if (result.success) {
       const userRef = doc(db, 'users', userId);
       console.log('Updating user document for:', userId);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.data();
       await setDoc(userRef, { 
         isSubscribed: true,
-        loraTrainingsAvailable: 1
+        loraTrainingsAvailable: (userData?.loraTrainingsAvailable || 0) + 1
       }, { merge: true });
       console.log('Updated user document');
       return 'Subscription successful! You can now generate images and train one Lora model.';
