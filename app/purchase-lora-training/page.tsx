@@ -16,6 +16,10 @@ export default function PurchaseLoraTraining() {
 
     try {
       const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        throw new Error('User not authenticated');
+      }
+
       const response = await fetch('/api/create-lora-training-session', {
         method: 'POST',
         headers: {
@@ -26,7 +30,7 @@ export default function PurchaseLoraTraining() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const { sessionId } = await response.json();
