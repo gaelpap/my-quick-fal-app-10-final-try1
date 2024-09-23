@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 function LoraTraining() {
   const [loraTrainingsAvailable, setLoraTrainingsAvailable] = useState<number | null>(null);
@@ -37,28 +38,29 @@ function LoraTraining() {
     return <div className="text-black">Loading...</div>;
   }
 
-  if (loraTrainingsAvailable === 0) {
-    return (
-      <div className="text-black">
-        <h2 className="text-2xl font-bold mb-4">Lora Training</h2>
-        <p className="mb-4">You have no Lora trainings available.</p>
-        <button
-          onClick={handlePurchaseTraining}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Purchase a new training
-        </button>
-      </div>
-    );
-  }
-
-  // Your existing Lora training component code goes here
-  // This should include your file upload, trigger word input, and training logic
   return (
     <div className="text-black">
       <h2 className="text-2xl font-bold mb-4">Lora Training</h2>
       <p className="mb-4">Available trainings: {loraTrainingsAvailable}</p>
-      {/* Your existing Lora training form and logic */}
+      {loraTrainingsAvailable > 0 ? (
+        <div>
+          <p className="mb-4">You have Lora trainings available. Click below to start a new training:</p>
+          <Link href="/start-lora-training" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            Start New Lora Training
+          </Link>
+        </div>
+      ) : (
+        <div>
+          <p className="mb-4">You have no Lora trainings available.</p>
+          <button
+            onClick={handlePurchaseTraining}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Purchase a new training
+          </button>
+        </div>
+      )}
+      {error && <p className="text-red-500 mt-4">{error}</p>}
     </div>
   );
 }
