@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
+import { loadStripe } from '@stripe/stripe-js';
 
 export default function PurchaseLoraTraining() {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,17 +25,24 @@ export default function PurchaseLoraTraining() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create checkout session');
       }
 
       const { sessionId } = await response.json();
       
       // Redirect to Stripe Checkout
       const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-      await stripe?.redirectToCheckout({ sessionId });
+      if (!stripe) {
+        throw new Error('Failed to load Stripe');
+      }
+      const result = await stripe.redirectToCheckout({ sessionId });
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      setError('Failed to initiate purchase. Please try again.');
+      setError(`Failed to initiate purchase: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
