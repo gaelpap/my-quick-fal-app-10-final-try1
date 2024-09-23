@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 function LoraTraining() {
-  const [loraTrainingsAvailable, setLoraTrainingsAvailable] = useState<number | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -19,7 +19,7 @@ function LoraTraining() {
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           const userData = userDoc.data();
-          setLoraTrainingsAvailable(userData?.loraTrainingsAvailable ?? 0);
+          setIsSubscribed(userData?.isSubscribed ?? false);
         } catch (err) {
           console.error('Error fetching user data:', err);
           setError('Failed to fetch user data. Please try again.');
@@ -32,8 +32,8 @@ function LoraTraining() {
     fetchUserData();
   }, []);
 
-  const handlePurchaseTraining = () => {
-    router.push('/purchase-lora-training');
+  const handleSubscribe = () => {
+    router.push('/subscription');
   };
 
   if (isLoading) {
@@ -47,19 +47,18 @@ function LoraTraining() {
   return (
     <div className="text-black">
       <h2 className="text-2xl font-bold mb-4">Lora Training</h2>
-      <p className="mb-4">Available trainings: {loraTrainingsAvailable}</p>
-      {loraTrainingsAvailable > 0 ? (
+      {isSubscribed ? (
         <Link href="/start-lora-training" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
           Start Lora Training
         </Link>
       ) : (
         <div>
-          <p className="mb-4">You have no Lora trainings available.</p>
+          <p className="mb-4">You need to subscribe to access Lora Training.</p>
           <button
-            onClick={handlePurchaseTraining}
+            onClick={handleSubscribe}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            Purchase a new training
+            Subscribe Now
           </button>
         </div>
       )}
