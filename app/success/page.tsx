@@ -27,9 +27,12 @@ async function verifySubscription(sessionId: string, userId: string) {
     if (result.success) {
       const userRef = doc(db, 'users', userId);
       console.log('Updating user document for:', userId);
-      await setDoc(userRef, { isSubscribed: true }, { merge: true });
+      await setDoc(userRef, { 
+        isSubscribed: true,
+        loraTrainingsAvailable: 1
+      }, { merge: true });
       console.log('Updated user document');
-      return 'Subscription successful! You can now generate images.';
+      return 'Subscription successful! You can now generate images and train one Lora model.';
     } else {
       return 'Failed to verify subscription. Please contact support.';
     }
