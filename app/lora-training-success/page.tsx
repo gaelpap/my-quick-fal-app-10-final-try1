@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 async function verifyLoraTrainingPurchase(sessionId: string, userId: string) {
   try {
@@ -22,10 +22,6 @@ async function verifyLoraTrainingPurchase(sessionId: string, userId: string) {
     const result = await response.json();
 
     if (result.success) {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        loraTrainingsAvailable: increment(1)
-      });
       return 'Lora training purchase successful! You can now train a new Lora model.';
     } else {
       return 'Failed to verify purchase. Please contact support.';
